@@ -1,6 +1,6 @@
 import { themes, applyTheme } from "./themes.js";
-import { snippets } from "./snippets.js";
 
+// DOM Elements
 const modeBtns = document.querySelectorAll(".mode-btn");
 const langBtns = document.querySelectorAll(".lang-btn");
 const optionsBar = document.getElementById("optionsBar");
@@ -26,189 +26,268 @@ const themeToggleBtn = document.getElementById("themeToggleBtn");
 const themeCloseBtn = document.getElementById("themeCloseBtn");
 const themeGrid = document.getElementById("themeGrid");
 
+// State
+let db = null;
 let currentLang = "python";
-let currentMode = "snippet"; // snippet | time | words
+let currentMode = "snippet";
 let timeLimit = 30;
 let wordLimit = 50;
 
-let currentSnippet = "";
-let userInput = "";
+let snippetText = "";
+let inputText = "";
 let idx = 0;
-let startTime = null;
+let startedAt = null;
 let timerId = null;
 
-function pickSnippet(lang, bucket) {
-    const list = snippets[lang][bucket];
-    if (!list || list.length === 0) return "";
+// Helper Functions
+function getBucket(lang, bucket) {
+    if (!db || !db.languages) {
+        console.error("Database not loaded");
+        return [];
+    }
+    const langNode = db.languages[lang];
+    if (!langNode) {
+        console.error(`Language ${lang} not found in database`);
+        return [];
+    }
+    const list = langNode[bucket];
+    if (!Array.isArray(list)) {
+        console.error(`Bucket ${bucket} not found for ${lang}`);
+        return [];
+    }
+    return list;
+}
+
+function pickSnippetFromBucket(lang, bucket) {
+    const list = getBucket(lang, bucket);
+    if (!list.length) {
+        console.error(`No snippets found for ${lang} in ${bucket}`);
+        return "";
+    }
     const i = Math.floor(Math.random() * list.length);
     return list[i];
 }
 
-function buildSnippetForMode() {
+function buildSnippet() {
+    console.log(`Building snippet: mode=${currentMode}, lang=${currentLang}`);
+    
     if (currentMode === "snippet") {
-        return pickSnippet(currentLang, "words50") || pickSnippet(currentLang, "words30");
+        // Pick a random size for snippet mode
+        const pool = ["words30", "words50", "words100"];
+        const bucket = pool[Math.floor(Math.random() * pool.length)];
+        console.log(`Snippet mode: using ${bucket}`);
+        return pickSnippetFromBucket(currentLang, bucket);
     }
+    
     if (currentMode === "words") {
-        if (wordLimit === 30) return pickSnippet(currentLang, "words30");
-        if (wordLimit === 50) return pickSnippet(currentLang, "words50");
-        return pickSnippet(currentLang, "words100");
+        const bucket = `words${wordLimit}`;
+        console.log(`Words mode: using ${bucket}`);
+        return pickSnippetFromBucket(currentLang, bucket);
     }
+    
     if (currentMode === "time") {
+        // For time mode, concatenate multiple snippets
+        console.log(`Time mode: ${timeLimit}s`);
         const parts = [];
+        let totalWords = 0;
         const targetWords = timeLimit === 15 ? 60 : timeLimit === 30 ? 120 : 200;
-        let count = 0;
-        while (count < targetWords) {
-            const s = pickSnippet(currentLang, "words50") || pickSnippet(currentLang, "words30");
-            if (!s) break;
-            const words = s.split(/\s+/).length;
-            parts.push(s);
-            count += words;
+        
+        while (totalWords < targetWords) {
+            const snippet = pickSnippetFromBucket(currentLang, "words50") || 
+                           pickSnippetFromBucket(currentLang, "words30");
+            if (!snippet) break;
+            
+            const words = snippet.split(/\s+/).filter(Boolean).length;
+            parts.push(snippet);
+            totalWords += words;
         }
+        
         return parts.join("\n\n");
     }
+    
     return "";
 }
 
-function setHeaderLabel() {
-    codeHeaderTitle.textContent = currentLang + " · " + currentMode;
+function setHeader() {
+    const modeText = currentMode === "snippet" ? "snippet" : 
+                    currentMode === "time" ? `${timeLimit}s` : 
+                    `${wordLimit} words`;
+    codeHeaderTitle.textContent = `${currentLang} · ${modeText}`;
 }
 
 function updateOptions() {
     optionsBar.innerHTML = "";
+    
     if (currentMode === "time") {
         [15, 30, 60].forEach(t => {
-            const btn = document.createElement("button");
-            btn.className = "pill-btn";
-            btn.textContent = t + "s";
-            if (t === timeLimit) btn.classList.add("active");
-            btn.onclick = () => {
+            const b = document.createElement("button");
+            b.className = "chip";
+            b.textContent = `${t}s`;
+            if (t === timeLimit) b.classList.add("active");
+            b.onclick = () => {
                 timeLimit = t;
                 updateOptions();
                 resetSession(true);
             };
-            optionsBar.appendChild(btn);
+            optionsBar.appendChild(b);
         });
     } else if (currentMode === "words") {
         [30, 50, 100].forEach(w => {
-            const btn = document.createElement("button");
-            btn.className = "pill-btn";
-            btn.textContent = w + " words";
-            if (w === wordLimit) btn.classList.add("active");
-            btn.onclick = () => {
+            const b = document.createElement("button");
+            b.className = "chip";
+            b.textContent = `${w} words`;
+            if (w === wordLimit) b.classList.add("active");
+            b.onclick = () => {
                 wordLimit = w;
                 updateOptions();
                 resetSession(true);
             };
-            optionsBar.appendChild(btn);
+            optionsBar.appendChild(b);
         });
     }
 }
 
-function renderCode() {
+function renderSnippet() {
     codeDisplay.innerHTML = "";
-    for (let i = 0; i < currentSnippet.length; i++) {
+    for (let i = 0; i < snippetText.length; i++) {
         const span = document.createElement("span");
         span.className = "char";
-        span.textContent = currentSnippet[i];
+        span.textContent = snippetText[i];
+        
         if (i < idx) {
-            if (userInput[i] === currentSnippet[i]) span.classList.add("correct");
-            else span.classList.add("incorrect");
+            if (inputText[i] === snippetText[i]) {
+                span.classList.add("correct");
+            } else {
+                span.classList.add("incorrect");
+            }
         } else if (i === idx) {
             span.classList.add("current");
         }
+        
         codeDisplay.appendChild(span);
     }
 }
 
-function calcMetrics() {
-    if (!startTime) {
+function updateMetrics() {
+    if (!startedAt) {
         wpmMetric.textContent = "0";
         accMetric.textContent = "100%";
         timeMetric.textContent = "0s";
         return;
     }
-    const elapsed = (Date.now() - startTime) / 1000;
+    
+    const elapsed = (Date.now() - startedAt) / 1000;
     const minutes = elapsed / 60;
+    
     let correct = 0;
     for (let i = 0; i < idx; i++) {
-        if (userInput[i] === currentSnippet[i]) correct++;
+        if (inputText[i] === snippetText[i]) correct++;
     }
+    
     const wpm = minutes > 0 ? Math.round((correct / 5) / minutes) : 0;
     const acc = idx > 0 ? Math.round((correct / idx) * 100) : 100;
 
-    let timeLabel;
+    let tLabel;
     if (currentMode === "time") {
         const remaining = Math.max(0, timeLimit - Math.floor(elapsed));
-        timeLabel = remaining + "s";
+        tLabel = `${remaining}s`;
     } else {
-        timeLabel = Math.floor(elapsed) + "s";
+        tLabel = `${Math.floor(elapsed)}s`;
     }
 
     wpmMetric.textContent = String(wpm);
-    accMetric.textContent = acc + "%";
-    timeMetric.textContent = timeLabel;
+    accMetric.textContent = `${acc}%`;
+    timeMetric.textContent = tLabel;
 }
 
-function isDone() {
-    if (!startTime) return false;
-
+function isComplete() {
+    if (!startedAt) return false;
+    
     if (currentMode === "snippet") {
-        if (idx >= currentSnippet.length) return true;
+        return idx >= snippetText.length;
     } else if (currentMode === "time") {
-        const elapsed = (Date.now() - startTime) / 1000;
-        if (elapsed >= timeLimit) return true;
+        const elapsed = (Date.now() - startedAt) / 1000;
+        return elapsed >= timeLimit;
     } else if (currentMode === "words") {
-        const words = userInput.trim().split(/\s+/).filter(Boolean).length;
-        if (words >= wordLimit) return true;
+        const words = inputText.trim().split(/\s+/).filter(Boolean).length;
+        return words >= wordLimit;
     }
+    
     return false;
 }
 
 function showResults() {
-    if (!startTime) return;
+    if (!startedAt) return;
     if (timerId) clearInterval(timerId);
 
-    const elapsed = (Date.now() - startTime) / 1000;
+    const elapsed = (Date.now() - startedAt) / 1000;
     const minutes = elapsed / 60;
+    
     let correct = 0;
     for (let i = 0; i < idx; i++) {
-        if (userInput[i] === currentSnippet[i]) correct++;
+        if (inputText[i] === snippetText[i]) correct++;
     }
+    
     const wpm = minutes > 0 ? Math.round((correct / 5) / minutes) : 0;
     const acc = idx > 0 ? Math.round((correct / idx) * 100) : 100;
 
     finalWPM.textContent = String(wpm);
-    finalAcc.textContent = acc + "%";
-    finalTime.textContent = Math.floor(elapsed) + "s";
+    finalAcc.textContent = `${acc}%`;
+    finalTime.textContent = `${Math.floor(elapsed)}s`;
 
     resultsView.classList.add("active");
 }
 
-function resetSession(reloadSnippet) {
-    if (timerId) clearInterval(timerId);
-    idx = 0;
-    userInput = "";
-    startTime = null;
-    if (reloadSnippet) {
-        currentSnippet = buildSnippetForMode();
+function resetSession(reload) {
+    // Clear any existing timer to prevent memory leaks
+    if (timerId) {
+        clearInterval(timerId);
+        timerId = null;
     }
-    setHeaderLabel();
-    renderCode();
-    calcMetrics();
+    
+    idx = 0;
+    inputText = "";
+    startedAt = null;
+    
+    try {
+        if (reload) {
+            snippetText = buildSnippet() || "";
+            if (!snippetText) {
+                console.error("Failed to load snippet");
+                // Provide a fallback snippet if loading fails
+                snippetText = "// Error loading snippet. Please try again.";
+            }
+        }
+        setHeader();
+        renderSnippet();
+        updateMetrics();
+        resultsView.classList.remove("active");
+    } catch (error) {
+        console.error("Error resetting session:", error);
+        // Show error to user in a non-blocking way
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'error-message';
+        errorMsg.textContent = 'Error loading content. Please refresh the page.';
+        document.body.appendChild(errorMsg);
+        setTimeout(() => errorMsg.remove(), 3000);
+    }
+    renderSnippet();
+    updateMetrics();
     resultsView.classList.remove("active");
 }
 
 function startTimerIfNeeded() {
-    if (startTime) return;
-    startTime = Date.now();
+    if (startedAt) return;
+    startedAt = Date.now();
     timerId = setInterval(() => {
-        calcMetrics();
-        if (isDone()) {
+        updateMetrics();
+        if (isComplete()) {
             showResults();
         }
-    }, 120);
+    }, 100);
 }
 
+// Event Listeners
 document.addEventListener("keydown", e => {
     if (resultsView.classList.contains("active")) return;
     if (themeDrawer.style.display === "flex") return;
@@ -216,10 +295,10 @@ document.addEventListener("keydown", e => {
     if (e.key === "Backspace") {
         e.preventDefault();
         if (idx > 0) {
-            userInput = userInput.slice(0, -1);
+            inputText = inputText.slice(0, -1);
             idx--;
-            renderCode();
-            calcMetrics();
+            renderSnippet();
+            updateMetrics();
         }
         return;
     }
@@ -228,79 +307,96 @@ document.addEventListener("keydown", e => {
         e.preventDefault();
         startTimerIfNeeded();
 
-        if (currentMode === "time" && isDone()) return;
+        if (currentMode !== "time" && idx >= snippetText.length) return;
 
         if (e.key === "Enter") {
-            let lineStart = userInput.lastIndexOf("\n") + 1;
-            if (lineStart < 0) lineStart = 0;
-            const currentLine = userInput.slice(lineStart);
+            let lineStart = inputText.lastIndexOf("\n");
+            if (lineStart === -1) lineStart = 0;
+            else lineStart += 1;
+            
+            const currentLine = inputText.slice(lineStart);
             let indent = "";
             const m = currentLine.match(/^[ \t]*/);
             if (m) indent = m[0];
+            
             const trimmed = currentLine.trimEnd();
             if (trimmed.endsWith(":") || trimmed.endsWith("{")) {
                 indent += "    ";
             }
-            userInput += "\n" + indent;
+            
+            inputText += "\n" + indent;
             idx += 1 + indent.length;
         } else if (e.key === "Tab") {
-            userInput += "    ";
+            inputText += "    ";
             idx += 4;
         } else {
-            userInput += e.key;
+            inputText += e.key;
             idx++;
         }
 
-        renderCode();
-        calcMetrics();
-        if (isDone()) showResults();
+        renderSnippet();
+        updateMetrics();
+        if (isComplete()) showResults();
     }
 });
 
-modeBtns.forEach(btn => {
-    btn.addEventListener("click", () => {
-        modeBtns.forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        currentMode = btn.dataset.mode;
+// Mode buttons
+modeBtns.forEach(b => {
+    b.addEventListener("click", () => {
+        console.log(`Mode button clicked: ${b.dataset.mode}`);
+        modeBtns.forEach(x => x.classList.remove("active"));
+        b.classList.add("active");
+        currentMode = b.dataset.mode;
         updateOptions();
         resetSession(true);
     });
 });
 
-langBtns.forEach(btn => {
-    btn.addEventListener("click", () => {
-        langBtns.forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        currentLang = btn.dataset.lang;
+// Language buttons
+langBtns.forEach(b => {
+    b.addEventListener("click", () => {
+        console.log(`Language button clicked: ${b.dataset.lang}`);
+        langBtns.forEach(x => x.classList.remove("active"));
+        b.classList.add("active");
+        currentLang = b.dataset.lang;
         resetSession(true);
     });
 });
 
+// Action buttons
 restartBtn.addEventListener("click", () => {
+    console.log("Restart clicked");
     resetSession(true);
 });
 
 nextBtn.addEventListener("click", () => {
+    console.log("Next clicked");
     resetSession(true);
 });
 
 resultsNextBtn.addEventListener("click", () => {
+    console.log("Results Next clicked");
     resetSession(true);
 });
 
 resultsRetryBtn.addEventListener("click", () => {
+    console.log("Results Retry clicked");
     resetSession(false);
 });
 
+// Theme drawer
 function openThemeDrawer() {
+    console.log("Opening theme drawer");
     themeDrawer.style.display = "flex";
 }
 
 function closeThemeDrawer() {
+    console.log("Closing theme drawer");
     themeDrawer.style.display = "none";
 }
 
 themeToggleBtn.addEventListener("click", () => {
+    console.log("Theme toggle clicked");
     openThemeDrawer();
 });
 
@@ -317,9 +413,11 @@ function buildThemeGrid() {
     Object.entries(themes).forEach(([key, t]) => {
         const card = document.createElement("button");
         card.className = "theme-card";
+        
         const name = document.createElement("div");
         name.className = "theme-card-name";
         name.textContent = t.name;
+        
         const sw = document.createElement("div");
         sw.className = "theme-card-swatches";
 
@@ -329,7 +427,7 @@ function buildThemeGrid() {
 
         const s2 = document.createElement("div");
         s2.className = "theme-swatch";
-        s2.style.background = t.cardBg;
+        s2.style.background = t.surface;
 
         const s3 = document.createElement("div");
         s3.className = "theme-swatch";
@@ -338,11 +436,11 @@ function buildThemeGrid() {
         sw.appendChild(s1);
         sw.appendChild(s2);
         sw.appendChild(s3);
-
         card.appendChild(name);
         card.appendChild(sw);
 
         card.addEventListener("click", () => {
+            console.log(`Theme selected: ${key}`);
             applyTheme(key);
             closeThemeDrawer();
         });
@@ -351,18 +449,37 @@ function buildThemeGrid() {
     });
 }
 
-function initTheme() {
-    applyTheme("charcoal");
+async function loadDb() {
+    try {
+        console.log("Loading snippets database...");
+        const res = await fetch("./src/data/snippets.json");
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        db = await res.json();
+        console.log("Database loaded successfully:", db);
+        
+        // Verify structure
+        if (db && db.languages) {
+            console.log("Available languages:", Object.keys(db.languages));
+        }
+    } catch (error) {
+        console.error("Failed to load snippets database:", error);
+        alert("Failed to load code snippets. Please check if snippets.json exists in src/data/");
+    }
+}
+
+async function init() {
+    console.log("Initializing Typr_...");
+    applyTheme("default");
     buildThemeGrid();
-}
-
-function initApp() {
-    initTheme();
+    await loadDb();
     updateOptions();
-    currentSnippet = buildSnippetForMode();
-    setHeaderLabel();
-    renderCode();
-    calcMetrics();
+    snippetText = buildSnippet();
+    setHeader();
+    renderSnippet();
+    updateMetrics();
+    console.log("Initialization complete");
 }
 
-initApp();
+init();

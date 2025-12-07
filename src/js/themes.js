@@ -1,26 +1,26 @@
 export const themes = {
-    charcoal: {
-        name: "Charcoal",
+    default: {
+        name: "Midnight",
         bg: "#050509",
-        cardBg: "rgba(10,10,28,0.96)",
-        accent: "#5ef2ff",
-        accentSoft: "rgba(94,242,255,0.14)",
-        danger: "#ff5263",
-        muted: "#9a9ab5"
+        surface: "rgba(10,12,24,0.96)",
+        accent: "#a855f7",
+        accentSoft: "rgba(168,85,247,0.14)",
+        danger: "#ff5c7a",
+        muted: "#9c9cb5"
     },
     terminal: {
         name: "Terminal",
         bg: "#020302",
-        cardBg: "rgba(6,12,8,0.96)",
-        accent: "#37ff6b",
-        accentSoft: "rgba(55,255,107,0.2)",
-        danger: "#ffb347",
-        muted: "#8bb58d"
+        surface: "rgba(4,9,8,0.96)",
+        accent: "#22c55e",
+        accentSoft: "rgba(34,197,94,0.18)",
+        danger: "#f97316",
+        muted: "#86efac"
     },
     newspaper: {
-        name: "Newspaper",
-        bg: "#f2f0ea",
-        cardBg: "rgba(252,252,248,0.96)",
+        name: "Paper",
+        bg: "#f4f1ea",
+        surface: "rgba(252,251,247,0.98)",
         accent: "#0f4aad",
         accentSoft: "rgba(15,74,173,0.12)",
         danger: "#d7263d",
@@ -28,37 +28,28 @@ export const themes = {
     },
     blueprint: {
         name: "Blueprint",
-        bg: "#021532",
-        cardBg: "rgba(4,24,65,0.96)",
-        accent: "#7fb5ff",
-        accentSoft: "rgba(127,181,255,0.22)",
-        danger: "#ffc857",
-        muted: "#a6c8ff"
-    },
-    dusk: {
-        name: "Dusk",
-        bg: "#150925",
-        cardBg: "rgba(26,13,54,0.96)",
-        accent: "#ff9de1",
-        accentSoft: "rgba(255,157,225,0.2)",
-        danger: "#ff7b72",
-        muted: "#d4b5ff"
+        bg: "#02091a",
+        surface: "rgba(5,20,55,0.98)",
+        accent: "#60a5fa",
+        accentSoft: "rgba(96,165,250,0.18)",
+        danger: "#eab308",
+        muted: "#bfdbfe"
     },
     forest: {
         name: "Forest",
-        bg: "#020f0b",
-        cardBg: "rgba(5,32,23,0.96)",
-        accent: "#60ffb2",
-        accentSoft: "rgba(96,255,178,0.2)",
-        danger: "#ff6678",
-        muted: "#9fd5be"
+        bg: "#010807",
+        surface: "rgba(6,24,18,0.98)",
+        accent: "#22c55e",
+        accentSoft: "rgba(34,197,94,0.18)",
+        danger: "#fb7185",
+        muted: "#a7f3d0"
     }
 };
 
 export function applyTheme(key) {
-    const t = themes[key];
-    if (!t) return;
+    const t = themes[key] || themes.default;
     document.documentElement.style.setProperty("--bg", t.bg);
+    document.documentElement.style.setProperty("--surface", t.surface);
     document.documentElement.style.setProperty("--accent", t.accent);
     document.documentElement.style.setProperty("--accent-soft", t.accentSoft);
     document.documentElement.style.setProperty("--danger", t.danger);

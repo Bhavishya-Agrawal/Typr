@@ -2,132 +2,134 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CodeSprint – Developer Typing</title>
+    <title>Typr_ – Developer Typing Lab</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./src/css/styles.css">
 </head>
 <body>
-    <div class="page-bg"></div>
-    <div class="page-noise"></div>
+    <div class="bg-layer"></div>
+    <div class="noise-layer"></div>
 
     <header class="header">
-        <div class="logo">
-            <span>Code</span><span class="logo-accent">Sprint</span>
+        <div class="brand">
+            <span class="brand-mark">Typr_</span>
         </div>
-        <div class="header-right">
-            <button class="icon-button" id="themeToggleBtn" aria-label="Toggle themes">
-                ⌘
+        <div class="header-actions">
+            <button class="icon-btn" id="themeToggleBtn" aria-label="Switch color theme" title="Change color theme">
+                <span aria-hidden="true">☼</span>
+                <span class="sr-only">Switch color theme</span>
             </button>
         </div>
     </header>
 
     <main class="main">
-        <section class="shell">
-            <div class="shell-header">
-                <div class="badge-row">
-                    <span class="badge badge-pill">DEV FIRST</span>
-                    <span class="badge badge-soft">Code Snippets · WPM · Accuracy</span>
+        <section class="hero-shell">
+            <div class="hero-copy">
+                <div class="pill-row">
+                    <span class="pill pill-strong">For developers</span>
+                    <span class="pill pill-soft">Code snippets · WPM · Accuracy</span>
                 </div>
-                <h1 class="title">Type code, not lorem ipsum.</h1>
-                <p class="subtitle">
-                    A focused, Framer-inspired typing lab for developers. Pick a language, choose a mode, and race against real-world code.
+                <h1 class="hero-title">Type real code, beautifully.</h1>
+                <p class="hero-subtitle">
+                    Typr_ is a focused typing lab for developers. Choose a language, pick a mode, and sprint through curated snippets in a calm, minimal interface inspired by modern Framer sites.
                 </p>
             </div>
 
-            <div class="controls-row">
-                <div class="pill-group" id="modeGroup">
-                    <button class="pill-btn mode-btn active" data-mode="snippet">Snippet</button>
-                    <button class="pill-btn mode-btn" data-mode="time">Time</button>
-                    <button class="pill-btn mode-btn" data-mode="words">Words</button>
-                </div>
-
-                <div class="pill-group" id="optionsBar"></div>
-
-                <div class="pill-group" id="langGroup">
-                    <button class="pill-btn lang-btn active" data-lang="python">Python</button>
-                    <button class="pill-btn lang-btn" data-lang="javascript">JavaScript</button>
-                    <button class="pill-btn lang-btn" data-lang="java">Java</button>
-                    <button class="pill-btn lang-btn" data-lang="cpp">C++</button>
-                </div>
-            </div>
-
-            <div class="metrics">
-                <div class="metric">
-                    <span class="metric-label">WPM</span>
-                    <span class="metric-value" id="wpmMetric">0</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Accuracy</span>
-                    <span class="metric-value" id="accMetric">100%</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Time</span>
-                    <span class="metric-value" id="timeMetric">0s</span>
-                </div>
-            </div>
-
-            <div class="code-card">
-                <div class="code-header">
-                    <div class="dot red"></div>
-                    <div class="dot amber"></div>
-                    <div class="dot green"></div>
-                    <span class="code-header-title" id="codeHeaderTitle">python · snippet</span>
-                </div>
-                <div class="code-body" id="codeDisplay"></div>
-            </div>
-
-            <div class="bottom-row">
-                <button class="primary-btn" id="restartBtn">Restart</button>
-                <button class="ghost-btn" id="nextBtn">Next snippet</button>
-            </div>
-
-            <div class="results-overlay" id="resultsView">
-                <div class="results-card">
-                    <div class="results-pill">Session complete</div>
-                    <h2 class="results-title">Nice run.</h2>
-                    <div class="results-main">
-                        <div class="results-wpm" id="finalWPM">0</div>
-                        <div class="results-label">WPM</div>
+            <div class="panel">
+                <div class="panel-top">
+                    <div class="chip-group" id="modeGroup">
+                        <button class="chip mode-btn active" data-mode="snippet">Snippet</button>
+                        <button class="chip mode-btn" data-mode="time">Time</button>
+                        <button class="chip mode-btn" data-mode="words">Words</button>
                     </div>
-                    <div class="results-grid">
-                        <div>
-                            <div class="results-stat-label">Accuracy</div>
-                            <div class="results-stat-value" id="finalAcc">0%</div>
+
+                    <div class="chip-group" id="optionsBar"></div>
+
+                    <div class="chip-group" id="langGroup">
+                        <button class="chip lang-btn active" data-lang="python">Python</button>
+                        <button class="chip lang-btn" data-lang="javascript">JavaScript</button>
+                        <button class="chip lang-btn" data-lang="java">Java</button>
+                        <button class="chip lang-btn" data-lang="cpp">C++</button>
+                    </div>
+                </div>
+
+                <div class="metrics">
+                    <div class="metric">
+                        <span class="metric-label">WPM</span>
+                        <span class="metric-value" id="wpmMetric">0</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Accuracy</span>
+                        <span class="metric-value" id="accMetric">100%</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Time</span>
+                        <span class="metric-value" id="timeMetric">0s</span>
+                    </div>
+                </div>
+
+                <div class="editor-card">
+                    <div class="editor-header">
+                        <div class="dots">
+                            <span class="dot dot-red"></span>
+                            <span class="dot dot-amber"></span>
+                            <span class="dot dot-green"></span>
                         </div>
-                        <div>
-                            <div class="results-stat-label">Time</div>
-                            <div class="results-stat-value" id="finalTime">0s</div>
-                        </div>
+                        <span class="editor-title" id="codeHeaderTitle">python · snippet</span>
                     </div>
-                    <div class="results-actions">
-                        <button class="primary-btn" id="resultsNextBtn">Next test</button>
-                        <button class="ghost-btn" id="resultsRetryBtn">Try again</button>
+                    <div class="editor-body" id="codeDisplay"></div>
+                </div>
+
+                <div class="panel-actions">
+                    <button class="btn-primary" id="restartBtn">Restart</button>
+                    <button class="btn-ghost" id="nextBtn">Next snippet</button>
+                </div>
+
+                <div class="results-overlay" id="resultsView">
+                    <div class="results-card">
+                        <div class="results-pill">Session complete</div>
+                        <h2 class="results-title">Nice run.</h2>
+                        <div class="results-main">
+                            <div class="results-wpm" id="finalWPM">0</div>
+                            <div class="results-main-label">WPM</div>
+                        </div>
+                        <div class="results-grid">
+                            <div>
+                                <span class="results-label">Accuracy</span>
+                                <span class="results-value" id="finalAcc">0%</span>
+                            </div>
+                            <div>
+                                <span class="results-label">Time</span>
+                                <span class="results-value" id="finalTime">0s</span>
+                            </div>
+                        </div>
+                        <div class="results-actions">
+                            <button class="btn-primary" id="resultsNextBtn">Next test</button>
+                            <button class="btn-ghost" id="resultsRetryBtn">Try again</button>
+                        </div>
                     </div>
                 </div>
             </div>
-
         </section>
     </main>
 
     <footer class="footer">
-        <div class="footer-left">
-            <span class="footer-tag">Built by Bhavishya</span>
-        </div>
+        <span class="footer-text">Typr_ by Bhavishya Agrawal</span>
         <div class="footer-links">
-            <a href="https://www.linkedin.com/in/yourprofile" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-            <a href="https://github.com/yourusername" target="_blank" rel="noopener noreferrer">GitHub</a>
-            <a href="https://www.buymeacoffee.com/yourhandle" target="_blank" rel="noopener noreferrer">Buy me a coffee</a>
+            <a href="https://www.linkedin.com/in/bhavishya-agrawal-8530622bb/" target="_blank" rel="noopener noreferrer nofollow" aria-label="LinkedIn (opens in new tab)">LinkedIn</a>
+            <a href="https://github.com/Bhavishya-Agrawal" target="_blank" rel="noopener noreferrer nofollow" aria-label="GitHub (opens in new tab)">GitHub</a>
+            <a href="https://buymeacoffee.com/bhavishyaaagrawal" target="_blank" rel="noopener noreferrer nofollow">Buy me a coffee</a>
         </div>
     </footer>
 
     <div class="theme-drawer" id="themeDrawer">
-        <div class="theme-drawer-inner">
-            <div class="theme-drawer-header">
+        <div class="theme-sheet">
+            <div class="theme-header">
                 <h3>Themes</h3>
-                <button class="icon-button" id="themeCloseBtn">✕</button>
+                <button class="icon-btn icon-small" id="themeCloseBtn">✕</button>
             </div>
-            <p class="theme-drawer-subtitle">Switch the vibe. Performance stays the same.</p>
+            <p class="theme-subtitle">Switch the surface while the typing stays the same.</p>
             <div class="theme-grid" id="themeGrid"></div>
         </div>
     </div>
